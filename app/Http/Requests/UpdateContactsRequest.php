@@ -11,7 +11,7 @@ class UpdateContactsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**

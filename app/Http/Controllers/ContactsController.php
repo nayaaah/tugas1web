@@ -6,8 +6,9 @@ use App\Models\Contacts;
 use App\Http\Requests\StoreContactsRequest;
 use App\Http\Requests\UpdateContactsRequest;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
-use PhpParser\Node\Stmt\TryCatch;
+
 
 class ContactsController extends Controller
 {
@@ -21,16 +22,16 @@ class ContactsController extends Controller
             $contacts = Contacts::all();
 
             // 2. mengirimkan respons Json jika berhasil
-            return response()->json([
+            return Response::json([
                 'message' => 'List Contacts',
                 'data' => $contacts
             ], 200);
         } catch (\Exception $e) {
             // 3. mengirimkan respons Json jika terjadi error
-            return response()->json([
+            return Response::json([
                 'message' => $e->getMessage(),
                 'data' => null
-            ], 500);
+            ], 200);
         }
     }
 
@@ -47,13 +48,13 @@ class ContactsController extends Controller
             $contacts = Contacts::create($validatedData);
 
             // 3. kirim respons sukses beserta data yang baru dibuat
-            return response()->json([
+            return Response::json([
                 'message' => 'Contacts berhasil dibuat',
                 'data' => $contacts
             ], 201);
         } catch (\Exception $e) {
             // 4. tangani jika terjadi error tak terduga
-            return response()->json([
+            return Response::json([
                 'message' => 'Terjadi kesalahan pada server',
                 'error' => $e->getMessage()
             ], 500);
@@ -88,15 +89,17 @@ class ContactsController extends Controller
             $validated = $request->safe()->all();
 
             // 2. Update model dengan data yang tervalidasi
-            if($contacts->update($validated)){
+            $contacts->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'],
+                'address' => $validated['address']
+            ]);
                 return Response::json([
                     'message' => "Contacts updated",
                     'data' => $contacts
                 ], 200);
-            }
-
-            
-        } catch (\Exception $e) {
+            }catch (Exception $e) {
             // 4. Tangani jika terjadi error tak terduga
             return Response::json([
                 'message' => $e->getMessage(),
@@ -111,20 +114,24 @@ class ContactsController extends Controller
     public function destroy(Contacts $contacts)
     {
         try {
+            $user = Auth::user();
+
             // 1. Hapus data dari database
-            if($contacts->delete()){
+            if($contacts->user_id == $user->id || $user->role == 'Admin'){
+                if($contacts->delete()){
                 return Response::json([
                     'message' => "Contacts deleted",
                     'data' => null
                 ], 200);
             }
-
+        } else {
             // 2. Kirim respons yang sesuai
             return Response::json([
                 'message' => "Contacts not deleted",
                 'data' => null
-            ], 500);
-        } catch (\Exception $e) {
+            ], 200);
+        }
+        } catch (Exception $e) {
             // 3. Tangani jika terjadi error
             return Response::json([
                 'message' => $e->getMessage(),
