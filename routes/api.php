@@ -4,6 +4,8 @@ use App\Http\Controllers\ContactsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::apiResource('contacts', ContactsController::class);
+
 // Middleware untuk user yang belum login
 Route::middleware('guest')->group(function() {
     Route::post('/register', [AuthController::class, 'register']);

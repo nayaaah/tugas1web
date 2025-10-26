@@ -6,7 +6,6 @@ use App\Models\Contacts;
 use App\Http\Requests\StoreContactsRequest;
 use App\Http\Requests\UpdateContactsRequest;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 
 
@@ -41,20 +40,21 @@ class ContactsController extends Controller
     public function store(StoreContactsRequest $request)
     {
         try {
-            // 1. ambil data yang sudah divalidasi dengan aman
+            // 1. Ambil data yang sudah divalidasi dengan aman
             $validatedData = $request->safe()->all();
 
-            // 2. buat record baru di database
+            // 2. Buat record baru di database
             $contacts = Contacts::create($validatedData);
 
-            // 3. kirim respons sukses beserta data yang baru dibuat
-            return Response::json([
-                'message' => 'Contacts berhasil dibuat',
+            // 3. Kirim respons sukses beserta data yang baru dibuat
+            return response()->json([
+                'message' => 'Contact berhasil dibuat',
                 'data' => $contacts
             ], 201);
+
         } catch (\Exception $e) {
-            // 4. tangani jika terjadi error tak terduga
-            return Response::json([
+            // 4. Tangani jika terjadi error tak terduga
+            return response()->json([
                 'message' => 'Terjadi kesalahan pada server',
                 'error' => $e->getMessage()
             ], 500);
@@ -71,7 +71,7 @@ class ContactsController extends Controller
                 'message' => "Detail Contact",
                 'data' => $contacts
             ], 200);
-         } catch (Exception $e) {
+        } catch (Exception $e) {
             return Response::json([
                 'message' => $e->getMessage(),
                 'data' => null
@@ -82,56 +82,54 @@ class ContactsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateContactsRequest $request, Contacts $contacts)
+    public function update(UpdateContactsRequest $request, Contacts $contact)
     {
-        try {
+         try {
             // 1. Ambil data yang sudah divalidasi
             $validated = $request->safe()->all();
 
             // 2. Update model dengan data yang tervalidasi
-            $contacts->update([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone_number' => $validated['phone_number'],
-                'address' => $validated['address']
-            ]);
+            if($contact->update($validated)){
                 return Response::json([
-                    'message' => "Contacts updated",
-                    'data' => $contacts
+                    'message' => "Contact updated",
+                    'data' => $contact
                 ], 200);
-            }catch (Exception $e) {
+            }
+
+            // 3. Kembalikan respons dengan data yang sudah diperbarui
+            return Response::json([
+                'message' => "Contact not updated",
+                'data' => null
+            ], 200);
+        } catch (\Exception $e) {
             // 4. Tangani jika terjadi error tak terduga
             return Response::json([
                 'message' => $e->getMessage(),
                 'data' => null
             ], 500);
-    }
+        }
 }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Contacts $contacts)
+    public function destroy(Contacts $contact)
     {
         try {
-            $user = Auth::user();
-
             // 1. Hapus data dari database
-            if($contacts->user_id == $user->id || $user->role == 'Admin'){
-                if($contacts->delete()){
+            if($contact->delete()){
                 return Response::json([
-                    'message' => "Contacts deleted",
+                    'message' => "Contact deleted",
                     'data' => null
                 ], 200);
             }
-        } else {
+
             // 2. Kirim respons yang sesuai
             return Response::json([
-                'message' => "Contacts not deleted",
+                'message' => "Contact not deleted",
                 'data' => null
-            ], 200);
-        }
-        } catch (Exception $e) {
+            ], 500);
+        } catch (\Exception $e) {
             // 3. Tangani jika terjadi error
             return Response::json([
                 'message' => $e->getMessage(),
@@ -139,5 +137,5 @@ class ContactsController extends Controller
             ], 500);
         }
     }
-    }
 
+}

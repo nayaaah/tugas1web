@@ -12,7 +12,7 @@ class StoreContactsRequest extends FormRequest
     public function authorize(): bool
     {
         //mengizinkann semua orang untuk membuat contact saat ini.
-        return false;
+        return true;
     }
 
     /**
