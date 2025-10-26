@@ -11,75 +11,64 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login (LoginRequest $request) 
+    public function login(LoginRequest $request)
     {
         try {
             $validated = $request->safe()->all();
-
-            if (!Auth::attempt($validated)) {
+            if(!Auth::attempt($validated)){
                 return response()->json([
-                    'message' => "Email atau password salah",
-                    'data' => null
+                    'message' => 'Login Gagal, Cek Kembali Email dan Password Anda'
                 ], 401);
             }
-            $user = $request->user();
-            $token = $user->createToken('laravel_api', ['*'])->plainTextToken;
 
+            $user = $request->user();
+            $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
                 'message' => 'Login Berhasil',
-                'user' => $user,
-                'token' => $token
-            ], 200);
-        }catch(Exception $e) {
-            return response()->json([
-                    'message' => $e->getMessage(),
-                    'data' => null
-                ], 500);
-        }
-    }
-
-    public function register (RegisterRequest $request) {
-        try {
-            $validated = $request->safe()->all();
-
-            $passwordHash = Hash::make($validated['password']); //untuk mengenkripsi password
-
-            $validated['password'] = $passwordHash;
-
-            $response = User::create($validated); //membuat user baru
-
-            if($response){
-                return response()->json([
-                    'message' => 'register berhasil',
-                    'data' => null
-                ], 201); //http code 201, berhasil membuat kode artinya
-            }
-        }catch(Exception $e) {
-            return response()->json([
-                    'message' => $e->getMessage(),
-                    'data' => null
-                ], 500);
-        }
-
-    }
-
-    public function logout (Request $request) 
-    {
-        try {
-            // ambil user yang sedang login
-            // ambil tokennya terus hapus
-            $request->user()->currentAccessToken()->delete();
-
-            //berikan response jika berhasil logout
-            return response()->json([
-                'message' => 'Berhasil Logout',
-                'data' => null
+                'access_token' => $token,
+                'user' => $user
             ], 200);
         } catch (Exception $e) {
             return response()->json([
-                'message' => $e->getMessage(),
-                'data' => null
+                'message' => 'Login Gagal',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
+
+ public function register(RegisterRequest $request)
+    {
+        try {
+            $validated = $request->safe()->all();
+            $passwordHash = Hash::make($validated['password']);
+            $validated['password'] = $passwordHash;
+            $response = User::create($validated);
+
+            if ($response){
+                return response()->json([
+                    'message' => 'Registrasi Berhasil',
+                    'data' => $response
+                ], 201);
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Registrasi Gagal',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+public function logout(Request $request)
+    {
+        try {
+            $request->user()->currentAccessToken()->delete();
+            return response()->json([
+                'message' => 'Logout Berhasil'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Logout Gagal',
+                'error' => $e->getMessage()
+            ], 500);}}
 }
